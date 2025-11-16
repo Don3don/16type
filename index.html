@@ -330,22 +330,29 @@
             outline-offset: 3px;
         }
 
+        .scale-choice input:checked + span {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
         .scale-choice.left input:checked + span {
             background: var(--agree);
-            box-shadow: 0 0 0 6px var(--agree-soft);
-            opacity: 1;
+            box-shadow: 0 0 0 6px var(--agree-soft), 0 0 12px rgba(0, 184, 148, 0.35);
         }
 
         .scale-choice.right input:checked + span {
             background: var(--disagree);
-            box-shadow: 0 0 0 6px var(--disagree-soft);
-            opacity: 1;
+            box-shadow: 0 0 0 6px var(--disagree-soft), 0 0 12px rgba(247, 107, 154, 0.35);
         }
 
         .scale-choice.neutral input:checked + span {
             background: var(--neutral);
-            box-shadow: 0 0 0 6px rgba(148, 163, 184, 0.25);
-            opacity: 1;
+            box-shadow: 0 0 0 6px rgba(148, 163, 184, 0.25), 0 0 10px rgba(148, 163, 184, 0.3);
+        }
+
+        .scale-choice.dim span {
+            opacity: 0.35;
+            box-shadow: none;
         }
 
         .form-actions {
@@ -498,20 +505,18 @@
 
             .scale {
                 grid-template-columns: 1fr;
-                padding: 1rem 0.9rem;
                 grid-template-areas: "buttons";
+                padding: 1rem 0.9rem;
             }
 
             .scale-label.left {
                 text-align: left;
                 margin-bottom: 0.2rem;
-                grid-area: auto;
             }
 
             .scale-buttons {
                 justify-content: center;
                 padding: 1rem 0.5rem;
-                grid-area: auto;
             }
 
             ol.question-list {
@@ -535,6 +540,27 @@
 
             .hero-card {
                 padding: 1.2rem;
+            }
+
+            .scale {
+                padding: 1.1rem 0.7rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+            }
+
+            .scale-label.left,
+            .scale-label.right {
+                margin: 0;
+                font-size: 0.9rem;
+            }
+
+            .scale-label.left {
+                align-self: flex-start;
+            }
+
+            .scale-label.right {
+                align-self: flex-end;
             }
 
             .scale-buttons {
@@ -561,32 +587,6 @@
             .scale-choice.neutral span {
                 width: 16px;
                 height: 16px;
-            }
-
-            .scale {
-                padding: 1.1rem 0.7rem;
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.4rem;
-            }
-
-            .scale-label.left,
-            .scale-label.right {
-                margin: 0;
-                font-size: 0.9rem;
-            }
-
-            .scale-label.left {
-                align-self: flex-start;
-            }
-
-            .scale-label.right {
-                align-self: flex-end;
-            }
-
-            .scale-buttons {
-                order: 1;
             }
 
             .result-visual__bubble {
@@ -881,7 +881,7 @@
                 li.className = "question";
                 li.innerHTML = `
                     <h3>Q${index + 1}. ${q.prompt}</h3>
-                    <div class="scale">
+                    <div class="scale" data-question="${q.id}">
                         <div class="scale-label left">${q.left}</div>
                         <div class="scale-buttons">
                             ${scaleTemplate.map(option => `
@@ -1007,6 +1007,7 @@
                 item.addEventListener("change", event => {
                     if (!event.target.matches("input[type='radio']")) return;
                     item.classList.add("answered");
+                    dimScaleChoices(item);
                     const next = questionItems[index + 1];
                     if (next) {
                         setTimeout(() => {
@@ -1017,13 +1018,28 @@
             });
         }
 
+        function dimScaleChoices(questionElem) {
+            const choices = questionElem.querySelectorAll(".scale-choice");
+            choices.forEach(choice => {
+                const input = choice.querySelector("input");
+                if (!input.checked) {
+                    choice.classList.add("dim");
+                } else {
+                    choice.classList.remove("dim");
+                }
+            });
+        }
+
         submitBtn.addEventListener("click", calculateType);
         form.addEventListener("input", updateProgress);
         form.addEventListener("reset", () => {
             setTimeout(() => {
                 formAlert.style.display = "none";
                 resultEl.style.display = "none";
-                document.querySelectorAll(".question").forEach(q => q.classList.remove("answered"));
+                document.querySelectorAll(".question").forEach(q => {
+                    q.classList.remove("answered");
+                    q.querySelectorAll(".scale-choice").forEach(choice => choice.classList.remove("dim"));
+                });
                 updateProgress();
             }, 0);
         });
